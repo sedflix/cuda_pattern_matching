@@ -27,6 +27,26 @@ make all
 ./pattern_tiling
 ./pattern_streams
 ```
+## Strategy
+
+### Titling
+
+`NWORDS` -> number of keywords we need to find.  
+
+Each block is 1-D with the size of the number of keywords that we need to find. This means that `BLOCK_DIM = (NWORDS,1,1)`. Each thread in the block is responsible for finding the number of the number of occurrences of one keyword(i.e assigned to the thread) in the text loaded into the shared memory of that block. In the end, the occurrence number is updated atomically to global memory. Each thread loads text from global memory using titling. That’s each thread loads `TILE_SIZE+TILE_SIZE`(to handle corner cases) elements from the global memory of text.  
+
+- Launch kernel with following config:
+    - Grid Size: (`Length Of Text`)/(`TILE_SIZE*NWORDS`)
+    - Block Size: `NWORDS`
+- load `text` into shared memory using titling
+- assign one keyword to each thread in a block
+- iterate through all memory location in the shared memory corresponding to the block to find the word count in that block. In other words, each thread will go through `TILE_SIZE * NWORDS` words to match a keyword and update a local sum counter
+- Atomically update add the sum counter to a global array
+
+### Streams
+
+We use a 8-way stream with `TILE_SIZE=1`.  
+
 
 ## Report
 
